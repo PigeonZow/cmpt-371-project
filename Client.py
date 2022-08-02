@@ -13,10 +13,9 @@ def startListener(s):
     global LISTENING
     while LISTENING:
         receive = s.recv(BUFFER).decode('utf-8')
-        arg = receive.split(' ')
-        if (arg[0] == "STOP"):
-            LISTENING = False
-            break
+        arg = receive.split(':')
+        if (arg[0] == "START"):
+            print("State: ", arg[0], "Player: ", arg[1], "Position: ", arg[2])
         else:
             print(receive)
 
