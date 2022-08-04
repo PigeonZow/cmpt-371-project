@@ -66,11 +66,11 @@ def startListener(s):
         elif (arg[0] == "CLAIM"):
             # Server tells client that square at (x,y) is claimed by (color)
             # CLAIM x y color
-            x = arg[1]
-            y = arg[2]
+            row = arg[1]
+            col = arg[2]
             playerColor = arg[3]
-            print(f"claim box {x} {y} for {playerColor}")
-            GAME_WINDOW.fillBox(x, y, playerColor)
+            print(f"claim box {row} {col} for {playerColor}")
+            GAME_WINDOW.fillBox(row, col, playerColor)
             # ...code here for client to lock square at (x,y) and color it
             # ...call functions in Client_GUI.py to manipulate GUI
 
@@ -293,11 +293,11 @@ class GamePage(Frame):
         self.mycanvas.bind('<ButtonRelease-1>', clearBox)
         self.bind("<<ShowFrame>>", makeBoxes)
 
-    def fillBox(self, x, y, player_color):
-        x = int(x)
-        y = int(y)
-        print(f'fill box {x} {y} {player_color}')
-        self.mycanvas.create_rectangle(x*self.myColWidth, y*self.myRowHeight, (x+1)*self.myColWidth, (y+1)*self.myRowHeight, fill=str(player_color).lower())
+    def fillBox(self, row, col, player_color):
+        row = int(row)
+        col = int(col)
+        print(f'fill box {row} {col} {player_color}')
+        self.mycanvas.create_rectangle(col*self.myColWidth, row*self.myRowHeight, (col+1)*self.myColWidth, (row+1)*self.myRowHeight, fill=str(player_color).lower())
         # gui1.main.get_frame('GamePage').fillBox()
             
     def lockPlayersBox(self, row, col):

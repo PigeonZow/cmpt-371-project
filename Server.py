@@ -113,35 +113,35 @@ def startListener(client):
         elif (arg[0] == "LOCK"):
             # Client tells server that square at (x,y) is locked
             # LOCK x y
-            x = arg[1]
-            y = arg[2]
+            row = arg[1]
+            col = arg[2]
             #color = arg[3]
             player_num = arg[3]
             # ...code for locking square at (x,y) in game state
-            print(f"locking square {x}, {y} for {player_num}")
-            broadcast(f"LOCK {x} {y} {player_num}")
+            print(f"locking square {row}, {col} for {player_num}")
+            broadcast(f"LOCK {row} {col} {player_num}")
         elif (arg[0] == "UNLOCK"):
             # Client tells server that square at (x,y) is unlocked
             # UNLOCK x y
-            x = arg[1]
-            y = arg[2]
+            row = arg[1]
+            col = arg[2]
 
             player_num = arg[3]
             # ...code for unlocking square at (x,y) in game state
-            print(f"unlocking square {x}, {y} for {player_num}")
-            broadcast(f"UNLOCK {x} {y} {player_num}")
+            print(f"unlocking square {row}, {col} for {player_num}")
+            broadcast(f"UNLOCK {row} {col} {player_num}")
 
         elif (arg[0] == "CLAIM"):
             # Client tells server that they claim the square at (x,y)
             # CLAIM x y
-            x = arg[1]
-            y = arg[2]
+            row = arg[1]
+            col = arg[2]
             player_num = arg[3]
 
             # ...code for claiming square at (x,y) in game state
             # check for whether client has claimed 50% of the square should be done on client side(?)
-            print(f"claiming square {x}, {y} for {player_num}")
-            broadcast(f"CLAIM {x} {y} {player_num}")
+            print(f"claiming square {row}, {col} for {player_num}")
+            broadcast(f"CLAIM {row} {col} {player_num}")
 
         elif (arg[0] == "START"):
             # Client (perhaps host client?) tells server to start the game
