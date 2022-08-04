@@ -129,14 +129,24 @@ def startListener(client):
             # UNLOCK x y
             x = arg[1]
             y = arg[2]
+
+            player_num = arg[3]
             # ...code for unlocking square at (x,y) in game state
+            print(f"unlocking square {x}, {y} for {player_num}")
+            broadcast(f"UNLOCK {x} {y} {player_num}")
+
         elif (arg[0] == "CLAIM"):
             # Client tells server that they claim the square at (x,y)
             # CLAIM x y
             x = arg[1]
             y = arg[2]
+            player_num = arg[3]
+
             # ...code for claiming square at (x,y) in game state
             # check for whether client has claimed 50% of the square should be done on client side(?)
+            print(f"claiming square {x}, {y} for {player_num}")
+            broadcast(f"CLAIM {x} {y} {player_num}")
+
         elif (arg[0] == "START"):
             # Client (perhaps host client?) tells server to start the game
             fillerFunc()
