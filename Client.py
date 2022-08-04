@@ -38,7 +38,7 @@ def startListener(s):
             LISTENING = False
             break
 
-        elif (int(arg[3]) == MY_PLAYER_NUMBER):
+        elif (arg[3] == MY_COLOR):
             pass
 
         elif (arg[0] == "LOCK"):
@@ -46,10 +46,10 @@ def startListener(s):
             # LOCK x y
             row = int(arg[1])
             col = int(arg[2])
-            player_num = int(arg[3])
+            playerColor = arg[3]
             # ...code here for client to lock square at (x,y)
             # ...call functions in Client_GUI.py to manipulate GUI
-            print(f"lock box {row} {col} for {player_num}")
+            print(f"lock box {row} {col} for {playerColor}")
             GAME_WINDOW.lockPlayersBox(row, col)
 
         elif (arg[0] == "UNLOCK"):
@@ -57,10 +57,10 @@ def startListener(s):
             # UNLOCK x y
             row = int(arg[1])
             col = int(arg[2])
-            player_num = int(arg[3])
+            playerColor = arg[3]
             # ...code here for client to unlock square at (x,y)
             # ...call functions in Client_GUI.py to manipulate GUI
-            print(f"unlock box {row} {col} for {player_num}")
+            print(f"unlock box {row} {col} for {playerColor}")
             GAME_WINDOW.unlockPlayersBox(row, col)
 
         elif (arg[0] == "CLAIM"):
@@ -68,9 +68,9 @@ def startListener(s):
             # CLAIM x y color
             x = arg[1]
             y = arg[2]
-            player_num = int(arg[3])
-            print(f"claim box {x} {y} for {player_num}")
-            GAME_WINDOW.fillBox(x, y, player_num)
+            playerColor = arg[3]
+            print(f"claim box {x} {y} for {playerColor}")
+            GAME_WINDOW.fillBox(x, y, playerColor)
             # ...code here for client to lock square at (x,y) and color it
             # ...call functions in Client_GUI.py to manipulate GUI
 
@@ -106,7 +106,7 @@ def startInput(s):
 
 
 def connect(ip, port):
-    global MY_PLAYER_NUMBER
+    global MY_COLOR
     global SOCKET
 
     # Create a socket
@@ -117,8 +117,8 @@ def connect(ip, port):
     print(f"[CONNECTED] to {ip}")
 
     #Store player's number
-    MY_PLAYER_NUMBER = int(SOCKET.recv(BUFFER).decode('utf-8'))
-    print(MY_PLAYER_NUMBER)
+    MY_COLOR = SOCKET.recv(BUFFER).decode('utf-8')
+    print("You are color: ", MY_COLOR)
 
     # Run separate threads for listening to server payloads, and receiving input from user (for testing)
     threading.Thread(target=startListener, args=(SOCKET,)).start()
@@ -129,7 +129,6 @@ WINDOW = None
 my_current_x, my_current_y = 0,0
 
 currentPos = [(0,0), (0,0), (0,0), (0,0), (0,0)]
-color = ["black", "red", "blue", "green", "yellow"]
 currentBox = (-1, -1) # col, row
 
 lockedBoxes = [[0 for x in range(8)] for y in range(8)]
@@ -206,7 +205,7 @@ class GamePage(Frame):
                 global my_current_x, my_current_y
                 box = getBox(event)
                 if box == currentBox and boxAreas[box[0]][box[1]] >= 0:
-                    c = color[MY_PLAYER_NUMBER]
+                    c = MY_COLOR
                     self.mycanvas.create_line((my_current_x,my_current_y,event.x,event.y),fill = c, width=5)
                     fillArea(lineLength(my_current_x, my_current_y, event.x, event.y) * 5, box[1], box[0], event)
                     my_current_x, my_current_y = event.x, event.y
@@ -229,8 +228,8 @@ class GamePage(Frame):
                 c='white'
                 if (0 <= box[1] <= 7) and (0 <= box[0] <= 7):
                     if boxAreas[box[0]][box[1]] < 0:
-                        c = color[MY_PLAYER_NUMBER]
-                        msg = f'CLAIM {box[0]} {box[1]} {MY_PLAYER_NUMBER}'
+                        c = MY_COLOR
+                        msg = f'CLAIM {box[0]} {box[1]} {MY_COLOR}'
                         SOCKET.send(msg.encode('utf-8'))
                         print("sending claim request")
                         checkEndgame()
@@ -240,8 +239,8 @@ class GamePage(Frame):
                     self.mycanvas.create_rectangle(box[1]*col_width, box[0]*row_height, (box[1]+1)*col_width, (box[0]+1)*row_height, fill=c)
                 else:
                     if boxAreas[currentBox[0]][currentBox[1]] < 0:
-                        c = color[MY_PLAYER_NUMBER]
-                        msg = f'CLAIM {box[0]} {box[1]} {MY_PLAYER_NUMBER}'
+                        c = MY_COLOR
+                        msg = f'CLAIM {box[0]} {box[1]} {MY_COLOR}'
                         SOCKET.send(msg.encode('utf-8'))
                         print("sending claim request")
                         checkEndgame()
@@ -267,7 +266,7 @@ class GamePage(Frame):
 
             #Do not lock box for self, send other players that this box is locked for me
             #locked_boxAreas[box[0]][box[1]] = 1
-            msg = f'LOCK {box[0]} {box[1]} {MY_PLAYER_NUMBER}'
+            msg = f'LOCK {box[0]} {box[1]} {MY_COLOR}'
             SOCKET.send(msg.encode('utf-8'))
             print("sending lock request")
 
@@ -277,7 +276,7 @@ class GamePage(Frame):
             #locked_boxAreas[box[0]][box[1]] = 0
             #Tell other players that this box is unlocked
 
-            msg = f'UNLOCK {box[0]} {box[1]} {MY_PLAYER_NUMBER}'
+            msg = f'UNLOCK {box[0]} {box[1]} {MY_COLOR}'
             SOCKET.send(msg.encode('utf-8'))
             print("sending unlock request")
 
@@ -294,11 +293,11 @@ class GamePage(Frame):
         self.mycanvas.bind('<ButtonRelease-1>', clearBox)
         self.bind("<<ShowFrame>>", makeBoxes)
 
-    def fillBox(self, x, y, player_num):
+    def fillBox(self, x, y, player_color):
         x = int(x)
         y = int(y)
-        print(f'fill box {x} {y} {player_num}')
-        self.mycanvas.create_rectangle(x*self.myColWidth, y*self.myRowHeight, (x+1)*self.myColWidth, (y+1)*self.myRowHeight, fill=str(color[player_num]).lower())
+        print(f'fill box {x} {y} {player_color}')
+        self.mycanvas.create_rectangle(x*self.myColWidth, y*self.myRowHeight, (x+1)*self.myColWidth, (y+1)*self.myRowHeight, fill=str(player_color).lower())
         # gui1.main.get_frame('GamePage').fillBox()
             
     def lockPlayersBox(self, row, col):

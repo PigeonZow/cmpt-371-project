@@ -55,13 +55,9 @@ def startServer(ip, port):
         client, addr = SERVER.accept()
 
         # Assign client a color
-        #color = COLORS.pop(0)
-        #PLAYER_COLOR[client.fileno()] = color
-        #msg = color
-        #client.send(msg.encode('utf-8'))
-
-        #Give clients Player Number
-        msg = f"{CURR_CLIENTS+1}"
+        color = COLORS.pop(0)
+        PLAYER_COLOR[client.fileno()] = color
+        msg = color
         client.send(msg.encode('utf-8'))
 
         # Store reference to each client and whether they are listening
