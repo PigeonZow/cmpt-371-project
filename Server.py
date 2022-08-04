@@ -16,9 +16,10 @@ LISTENING = {}
 BOARD_HEIGHT = 8
 BOARD_WIDTH = 8
 
-COLORS = ["RED", "BLUE", "GREEN", "YELLOW"]
+COLORS = ["BLACK", "RED", "BLUE", "GREEN", "YELLOW"]
 PLAYER_COLOR = {}
 BOARD = []
+PLAYER_POS = [(0,0), (0,0), (0,0), (0,0), (0,0),]
 
 class Box():
     # Custom Box object
@@ -54,9 +55,13 @@ def startServer(ip, port):
         client, addr = SERVER.accept()
 
         # Assign client a color
-        color = COLORS.pop(0)
-        PLAYER_COLOR[client.fileno()] = color
-        msg = color
+        #color = COLORS.pop(0)
+        #PLAYER_COLOR[client.fileno()] = color
+        #msg = color
+        #client.send(msg.encode('utf-8'))
+
+        #Give clients Player Number
+        msg = f"{CURR_CLIENTS+1}"
         client.send(msg.encode('utf-8'))
 
         # Store reference to each client and whether they are listening
@@ -114,10 +119,11 @@ def startListener(client):
             # LOCK x y
             x = arg[1]
             y = arg[2]
-            color = arg[3]
+            #color = arg[3]
+            player_num = arg[3]
             # ...code for locking square at (x,y) in game state
-            print(f"locking square {x}, {y} for {color}")
-            broadcast(f"LOCK {x} {y} {color}")
+            print(f"locking square {x}, {y} for {player_num}")
+            broadcast(f"LOCK {x} {y} {player_num}")
         elif (arg[0] == "UNLOCK"):
             # Client tells server that square at (x,y) is unlocked
             # UNLOCK x y

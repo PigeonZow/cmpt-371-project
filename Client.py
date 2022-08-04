@@ -29,21 +29,24 @@ def startListener(s):
     while LISTENING:
         receive = s.recv(BUFFER).decode('utf-8')
         arg = receive.split(' ')
+
         if (arg[0] == "DISCONNECT" or arg[0] == "STOP"):
             # Stop listener thread
             print("Press enter again to stop...")
             LISTENING = False
             break
+
         elif (arg[0] == "LOCK"):
             # Server tells client that square at (x,y) is locked
             # LOCK x y
             x = arg[1]
             y = arg[2]
-            color = arg[3]
+            player_num = int(arg[3])
             # ...code here for client to lock square at (x,y)
             # ...call functions in Client_GUI.py to manipulate GUI
-            print(f"lock box {x} {y} for {color}")
-            GAME_WINDOW.fillBox(x, y, color)
+            print(f"lock box {x} {y} for {player_num}")
+            GAME_WINDOW.fillBox(x, y, player_num)
+
         elif (arg[0] == "UNLOCK"):
             # Server tells client that square at (x,y) is unlocked
             # UNLOCK x y
@@ -51,6 +54,7 @@ def startListener(s):
             y = arg[2]
             # ...code here for client to unlock square at (x,y)
             # ...call functions in Client_GUI.py to manipulate GUI
+
         elif (arg[0] == "CLAIM"):
             # Server tells client that square at (x,y) is claimed by (color)
             # CLAIM x y color
@@ -59,19 +63,23 @@ def startListener(s):
             color = arg[3]
             # ...code here for client to lock square at (x,y) and color it
             # ...call functions in Client_GUI.py to manipulate GUI
+
         elif (arg[0] == "START"):
             # Server tells client that game has started
             fillerFunc()
             # ...call functions in Client_GUI.py to manipulate GUI
+
         elif (arg[0] == "RESTART"):
             # Server tells client to restart game (reset GUI)
             fillerFunc()
             # ...call functions in Client_GUI.py to manipulate GUI
+
         elif (arg[0] == "END"):
             # Server tells client that game has ended and which color won the game
             # END color
             color = arg[1]
             # ...call functions in Client_GUI.py to manipulate GUI
+
         else:
             print(receive)
 
@@ -88,7 +96,7 @@ def startInput(s):
 
 
 def connect(ip, port):
-    global COLOR
+    global MY_PLAYER_NUMBER
     global SOCKET
 
     # Create a socket
@@ -98,9 +106,9 @@ def connect(ip, port):
     SOCKET.connect((ip, port))
     print(f"[CONNECTED] to {ip}")
 
-    # Store assigned color on client side
-    COLOR = SOCKET.recv(BUFFER).decode('utf-8')
-    print(COLOR)
+    #Store player's number
+    MY_PLAYER_NUMBER = int(SOCKET.recv(BUFFER).decode('utf-8'))
+    print(MY_PLAYER_NUMBER)
 
     # Run separate threads for listening to server payloads, and receiving input from user (for testing)
     threading.Thread(target=startListener, args=(SOCKET,)).start()
@@ -108,8 +116,10 @@ def connect(ip, port):
 
 WINDOW = None
 
-current_x, current_y = 0,0
-color = 'black'
+my_current_x, my_current_y = 0,0
+
+currentPos = [(0,0), (0,0), (0,0), (0,0), (0,0)]
+color = ["black", "red", "blue", "green", "yellow"]
 currentBox = (-1, -1) # col, row
 
 class MainView(Frame):
@@ -172,19 +182,19 @@ class GamePage(Frame):
             return (col, row)
 
         def locate_xy(event):
-            global current_x, current_y
+            global my_current_x, my_current_y
             global currentBox
-            current_x, current_y = event.x, event.y
+            my_current_x, my_current_y = event.x, event.y
             currentBox = getBox(event)
 
         def addLine(event):
-            global current_x, current_y
+            global my_current_x, my_current_y
             box = getBox(event)
             if box == currentBox and boxAreas[box[1]][box[0]] >= 0:
-                c = color
-                self.mycanvas.create_line((current_x,current_y,event.x,event.y),fill = c, width=5)
-                fillArea(lineLength(current_x, current_y, event.x, event.y) * 5, box[0], box[1], event)
-                current_x, current_y = event.x, event.y
+                c = color[MY_PLAYER_NUMBER]
+                self.mycanvas.create_line((my_current_x,my_current_y,event.x,event.y),fill = c, width=5)
+                fillArea(lineLength(my_current_x, my_current_y, event.x, event.y) * 5, box[0], box[1], event)
+                my_current_x, my_current_y = event.x, event.y
                 # Send packet temporarily locking box for player (This bombards the server every tick the player draws)
 
         def lineLength(x0,y0,x1,y1):
@@ -203,13 +213,13 @@ class GamePage(Frame):
             c='white'
             if (0 <= box[0] <= 7) and (0 <= box[1] <= 7):
                 if boxAreas[box[1]][box[0]] < 0:
-                    c = 'grey'
+                    c = color[MY_PLAYER_NUMBER]
                 else:
                     boxAreas[box[1]][box[0]] = 0
                 self.mycanvas.create_rectangle(box[0]*col_width, box[1]*row_height, (box[0]+1)*col_width, (box[1]+1)*row_height, fill=c)
             else:
                 if boxAreas[currentBox[1]][currentBox[0]] < 0:
-                    c = 'grey'
+                    c = color[MY_PLAYER_NUMBER]
                 else:
                     boxAreas[currentBox[1]][currentBox[0]] = 0
                 self.mycanvas.create_rectangle(currentBox[0]*col_width, currentBox[1]*row_height, (currentBox[0]+1)*col_width, (currentBox[1]+1)*row_height, fill=c)
@@ -228,7 +238,7 @@ class GamePage(Frame):
             box = getBox(event)
             self.mycanvas.create_rectangle(box[0]*col_width, box[1]*row_height, (box[0]+1)*col_width, (box[1]+1)*row_height, fill="grey")
             # Send packet to permanently lock ownership of this box to player
-            msg = f'LOCK {box[0]} {box[1]} {COLOR}'
+            msg = f'LOCK {box[0]} {box[1]} {MY_PLAYER_NUMBER}'
             SOCKET.send(msg.encode('utf-8'))
             print("sending lock request")
             checkEndgame()
@@ -245,11 +255,11 @@ class GamePage(Frame):
         self.mycanvas.bind('<ButtonRelease-1>', clearBox)
         self.bind("<<ShowFrame>>", makeBoxes)
 
-    def fillBox(self, x, y, color):
+    def fillBox(self, x, y, player_num):
         x = int(x)
         y = int(y)
-        print(f'fill box {x} {y} {color}')
-        self.mycanvas.create_rectangle(x*self.myColWidth, y*self.myRowHeight, (x+1)*self.myColWidth, (y+1)*self.myRowHeight, fill=str(color).lower())
+        print(f'fill box {x} {y} {player_num}')
+        self.mycanvas.create_rectangle(x*self.myColWidth, y*self.myRowHeight, (x+1)*self.myColWidth, (y+1)*self.myRowHeight, fill=str(color[player_num]).lower())
         # gui1.main.get_frame('GamePage').fillBox()
 
 def startGUI():
