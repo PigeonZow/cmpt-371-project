@@ -1,6 +1,7 @@
 import socket
 import argparse
 import threading
+import pickle
 
 from tkinter import *
 import tkinter.font as font
@@ -9,7 +10,7 @@ import math
 # Defaults
 SERVER_IP = socket.gethostname()
 PORT = 9999
-BUFFER = 128
+BUFFER = 1024
 SOCKET = None
 
 COLOR = None
@@ -40,7 +41,6 @@ def startListener(s):
             color = arg[3]
             # ...code here for client to lock square at (x,y)
             # ...call functions in Client_GUI.py to manipulate GUI
-            print(f"lock box {x} {y} for {color}")
             if color != COLOR:
                 GAME_WINDOW.lockPlayersBox(x, y, color)
         elif (arg[0] == "UNLOCK"):
@@ -64,7 +64,9 @@ def startListener(s):
             # ...call functions in Client_GUI.py to manipulate GUI
         elif (arg[0] == "START"):
             # Server tells client that game has started
-            fillerFunc()
+            claimedStr = arg[1]
+            claimedArr = pickle.loads(claimedStr.encode('utf-8'))
+            print(claimedArr)
             # ...call functions in Client_GUI.py to manipulate GUI
         elif (arg[0] == "RESTART"):
             # Server tells client to restart game (reset GUI)
@@ -139,14 +141,18 @@ class MainView(Frame):
         return page
 
 class HomePage(Frame):
-   def __init__(self, parent, controller):
-       Frame.__init__(self, parent)
-       self.controller = controller
-       label = Label(self, text="Deny and Conquer", font=("Helvetica", 50))
-       label.pack()
-       buttonFont = font.Font(family='Helvetica', size=16, weight='bold')
-       btn = Button(self, text = "Start", font=buttonFont, height=5, width=15, command= lambda: controller.up_frame('GamePage'))
-       btn.pack()
+    def __init__(self, parent, controller):
+        Frame.__init__(self, parent)
+        self.controller = controller
+        label = Label(self, text="Deny and Conquer", font=("Helvetica", 50))
+        label.pack()
+        buttonFont = font.Font(family='Helvetica', size=16, weight='bold')
+        btn = Button(self, text = "Start", font=buttonFont, height=5, width=15, command= lambda: self.startGame())
+        btn.pack()
+
+    def startGame(self):
+        self.controller.up_frame('GamePage')
+        connect(SERVER_IP, PORT)
 
 class GamePage(Frame):
 
@@ -159,13 +165,11 @@ class GamePage(Frame):
         canvas = Canvas(self, background='yellow', width=1200, height=900) 
         canvas.grid(row=0,column=0)
         WINDOW.update()
-        # boxAreas = [[0 for x in range(8)] for y in range(8)]
         col_width = canvas.winfo_width()/8
         row_height = canvas.winfo_height()/8
         self.mycanvas = canvas
         self.myColWidth = col_width
         self.myRowHeight = row_height
-
         def getBox(event):
             col_width = self.mycanvas.winfo_width()/8
             row_height = self.mycanvas.winfo_height()/8
@@ -220,21 +224,17 @@ class GamePage(Frame):
                 controller.up_frame('HomePage')
 
         def lockBox(col, row):
-            # box = getBox(event)
             # Send packet to temporarily lock ownership of this box to player
             msg = f'LOCK {col} {row} {COLOR}'
             SOCKET.send(msg.encode('utf-8'))
             checkEndgame()
 
         def unlockBox(col, row):
-            # box = getBox(event)
-            #locked_boxAreas[box[0]][box[1]] = 0
             #Tell other players that this box is unlocked
             msg = f'UNLOCK {col} {row} {COLOR}'
             SOCKET.send(msg.encode('utf-8'))
         
         def claimBox(col, row):
-            # box = getBox(event)
             msg = f'CLAIM {col} {row} {COLOR}'
             SOCKET.send(msg.encode('utf-8'))
 
@@ -253,6 +253,7 @@ class GamePage(Frame):
         col = int(col)
         row = int(row)
         boxAreas[row][col] = -1
+        print(f"fill box {col} {row} {color}")
         self.mycanvas.create_rectangle(col*self.myColWidth, row*self.myRowHeight, (col+1)*self.myColWidth, (row+1)*self.myRowHeight, fill=str(color).lower())
     
     def lockPlayersBox(self, col, row, opponent_color):
@@ -260,14 +261,12 @@ class GamePage(Frame):
         row = int(row)
         lockedBoxes[row][col] = 1
         self.mycanvas.create_text(col*self.myColWidth + 75, row*self.myRowHeight + 56, text="DRAWING...", fill=opponent_color, font=('Helvetica 15 bold'))
-        # print(lockedBoxes[row][col] == 1)
     
     def unlockPlayersBox(self, col, row):
         col = int(col)
         row = int(row)
         lockedBoxes[row][col] = 0
         self.mycanvas.create_rectangle(col*self.myColWidth, row*self.myRowHeight, (col+1)*self.myColWidth, (row+1)*self.myRowHeight, fill='white')
-        print("unlocking Boxes: ", col, row, lockedBoxes[row][col] == 0)
 
 def startGUI():
     global WINDOW
@@ -297,7 +296,7 @@ def main():
     SERVER_IP = args.ip
     PORT = args.port
 
-    connect(args.ip, args.port)
+    # connect(args.ip, args.port)
 
     # Start GUI
     startGUI()

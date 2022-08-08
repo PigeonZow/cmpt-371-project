@@ -1,6 +1,7 @@
 import socket
 import argparse
 import threading
+import pickle
 
 # Defaults
 SERVER_IP = socket.gethostname()
@@ -35,6 +36,12 @@ class Box():
     def claim(self, color):
         self.CLAIMED_BY = color
 
+    def getClaimedBy(self):
+        return self.CLAIMED_BY
+
+    def getLocked(self):
+        return self.LOCKED
+
     def print(self):
         print(str(self.LOCKED) + "\n" + str(self.CLAIMED_BY))
 
@@ -57,6 +64,24 @@ def startServer(ip, port):
         PLAYER_COLOR[client.fileno()] = color
         msg = color
         client.send(msg.encode('utf-8'))
+
+        # for y in range(BOARD_HEIGHT):
+        #     for x in range(BOARD_WIDTH):
+        #         boxClaimedBy = BOARD[y][x].getClaimedBy()
+        #         if boxClaimedBy != None:
+        #             claimMsg = f"CLAIM {x} {y} {boxClaimedBy}"
+        #             print(boxClaimedBy)
+        #             client.send(claimMsg.encode('utf-8'))
+        if CURR_CLIENTS > 0:
+            claimedBoxes = []
+            for y in range (BOARD_HEIGHT):
+                for x in range(BOARD_WIDTH):
+                    boxClaimedBy = BOARD[y][x].getClaimedBy()
+                    if boxClaimedBy != None:
+                        claimedBoxes.append((x, y, boxClaimedBy))
+            claimedStr = pickle.dumps(claimedBoxes)
+            claimMsg = f"START {claimedStr}"
+            client.send(claimMsg.encode('utf-8'))
 
         # Store reference to each client and whether they are listening
         CLIENTS[client.fileno()] = client
@@ -137,7 +162,6 @@ def startListener(client):
             BOARD[row][col].claim(color)
             BOARD[row][col].print()
             # are all 64 boxes taken if yes end game
-            print(f'row: {row} col {col}')
             broadcast(f"CLAIM {x} {y} {color}")
         elif (arg[0] == "START"):
             # Client (perhaps host client?) tells server to start the game
