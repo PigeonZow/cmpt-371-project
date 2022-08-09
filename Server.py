@@ -80,8 +80,9 @@ def startServer(ip, port):
                     if boxClaimedBy != None:
                         claimedBoxes.append((x, y, boxClaimedBy))
             claimedStr = pickle.dumps(claimedBoxes)
-            claimMsg = f"START {claimedStr}"
-            client.send(claimMsg.encode('utf-8'))
+            claimMsg = f'START {claimedStr}'
+            # print(claimMsg.encode('utf-8'))
+            client.send(claimedStr)
 
         # Store reference to each client and whether they are listening
         CLIENTS[client.fileno()] = client
@@ -178,6 +179,7 @@ def startListener(client):
 
 def broadcast(msg):
     # Broadcast msg to all connected clients
+    msg = msg
     for client in CLIENTS.values():
         client.send(msg.encode('utf-8'))
 

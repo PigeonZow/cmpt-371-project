@@ -26,59 +26,71 @@ def startListener(s):
     global GAME_WINDOW
 
     while LISTENING:
-        receive = s.recv(BUFFER).decode('utf-8')
-        arg = receive.split(' ')
-        if (arg[0] == "DISCONNECT" or arg[0] == "STOP"):
-            # Stop listener thread
-            print("Press enter again to stop...")
-            LISTENING = False
-            break
-        elif (arg[0] == "LOCK"):
-            # Server tells client that square at (x,y) is locked
-            # LOCK x y
-            x = arg[1]
-            y = arg[2]
-            color = arg[3]
-            # ...code here for client to lock square at (x,y)
-            # ...call functions in Client_GUI.py to manipulate GUI
-            if color != COLOR:
-                GAME_WINDOW.lockPlayersBox(x, y, color)
-        elif (arg[0] == "UNLOCK"):
-            # Server tells client that square at (x,y) is unlocked
-            # UNLOCK x y
-            x = arg[1]
-            y = arg[2]
-            color = arg[3]
-            # ...code here for client to unlock square at (x,y)
-            # ...call functions in Client_GUI.py to manipulate GUI
-            if color != COLOR:
-                GAME_WINDOW.unlockPlayersBox(x, y)
-        elif (arg[0] == "CLAIM"):
-            # Server tells client that square at (x,y) is claimed by (color)
-            # CLAIM x y color
-            x = arg[1]
-            y = arg[2]
-            color = arg[3]
-            GAME_WINDOW.fillBox(x, y, color)
-            # ...code here for client to lock square at (x,y) and color it
-            # ...call functions in Client_GUI.py to manipulate GUI
-        elif (arg[0] == "START"):
-            # Server tells client that game has started
-            claimedStr = arg[1]
-            claimedArr = pickle.loads(claimedStr.encode('utf-8'))
-            print(claimedArr)
-            # ...call functions in Client_GUI.py to manipulate GUI
-        elif (arg[0] == "RESTART"):
-            # Server tells client to restart game (reset GUI)
-            fillerFunc()
-            # ...call functions in Client_GUI.py to manipulate GUI
-        elif (arg[0] == "END"):
-            # Server tells client that game has ended and which color won the game
-            # END color
-            color = arg[1]
-            # ...call functions in Client_GUI.py to manipulate GUI
-        else:
-            print(receive)
+        receiveUtf = True
+        receiveData = s.recv(BUFFER)
+        try:
+            receive = receiveData.decode('utf-8')
+        except:
+            receiveUtf = False
+            claimedArr = pickle.loads(receiveData)
+            arrLen = len(claimedArr)
+            for i in range(arrLen):
+                GAME_WINDOW.fillBox(claimedArr[i][0], claimedArr[i][1], claimedArr[i][2])
+
+        if (receiveUtf):
+            arg = receive.split(' ')
+            if (arg[0] == "DISCONNECT" or arg[0] == "STOP"):
+                # Stop listener thread
+                print("Press enter again to stop...")
+                LISTENING = False
+                break
+            elif (arg[0] == "LOCK"):
+                # Server tells client that square at (x,y) is locked
+                # LOCK x y
+                x = arg[1]
+                y = arg[2]
+                color = arg[3]
+                # ...code here for client to lock square at (x,y)
+                # ...call functions in Client_GUI.py to manipulate GUI
+                if color != COLOR:
+                    GAME_WINDOW.lockPlayersBox(x, y, color)
+            elif (arg[0] == "UNLOCK"):
+                # Server tells client that square at (x,y) is unlocked
+                # UNLOCK x y
+                x = arg[1]
+                y = arg[2]
+                color = arg[3]
+                # ...code here for client to unlock square at (x,y)
+                # ...call functions in Client_GUI.py to manipulate GUI
+                if color != COLOR:
+                    GAME_WINDOW.unlockPlayersBox(x, y)
+            elif (arg[0] == "CLAIM"):
+                # Server tells client that square at (x,y) is claimed by (color)
+                # CLAIM x y color
+                x = arg[1]
+                y = arg[2]
+                color = arg[3]
+                GAME_WINDOW.fillBox(x, y, color)
+                # ...code here for client to lock square at (x,y) and color it
+                # ...call functions in Client_GUI.py to manipulate GUI
+            elif (arg[0] == "START"):
+                # Server tells client that game has started
+                claimedStr = arg[1]
+                print(claimedStr)
+                claimedArr = pickle.loads(claimedStr.encode('utf-8'))
+                # ...call functions in Client_GUI.py to manipulate GUI
+            elif (arg[0] == "RESTART"):
+                # Server tells client to restart game (reset GUI)
+                fillerFunc()
+                # ...call functions in Client_GUI.py to manipulate GUI
+            elif (arg[0] == "END"):
+                # Server tells client that game has ended and which color won the game
+                # END color
+                color = arg[1]
+                # ...call functions in Client_GUI.py to manipulate GUI
+            else:
+                claimedArr = pickle.loads(receiveData)
+                print(claimedArr)
 
     s.close()
 
