@@ -1,7 +1,7 @@
 import socket
 import argparse
 import threading
-import pickle
+import time
 
 # Defaults
 SERVER_IP = socket.gethostname()
@@ -45,6 +45,17 @@ class Box():
     def print(self):
         print(str(self.LOCKED) + "\n" + str(self.CLAIMED_BY))
 
+
+def updateBoard(client):
+    for y in range(BOARD_HEIGHT):
+        for x in range(BOARD_WIDTH):
+            boxClaimedBy = BOARD[y][x].getClaimedBy()
+            if boxClaimedBy != None:
+                claimMsg = f"CLAIM {x} {y} {boxClaimedBy}"
+                print(boxClaimedBy)
+                client.send(claimMsg.encode('utf-8'))
+                time.sleep(0.01)
+
 def startServer(ip, port):
     global SERVER, LISTENING, CURR_CLIENTS
 
@@ -65,25 +76,6 @@ def startServer(ip, port):
         msg = color
         client.send(msg.encode('utf-8'))
 
-        # for y in range(BOARD_HEIGHT):
-        #     for x in range(BOARD_WIDTH):
-        #         boxClaimedBy = BOARD[y][x].getClaimedBy()
-        #         if boxClaimedBy != None:
-        #             claimMsg = f"CLAIM {x} {y} {boxClaimedBy}"
-        #             print(boxClaimedBy)
-        #             client.send(claimMsg.encode('utf-8'))
-        if CURR_CLIENTS > 0:
-            claimedBoxes = []
-            for y in range (BOARD_HEIGHT):
-                for x in range(BOARD_WIDTH):
-                    boxClaimedBy = BOARD[y][x].getClaimedBy()
-                    if boxClaimedBy != None:
-                        claimedBoxes.append((x, y, boxClaimedBy))
-            claimedStr = pickle.dumps(claimedBoxes)
-            claimMsg = f'START {claimedStr}'
-            # print(claimMsg.encode('utf-8'))
-            client.send(claimedStr)
-
         # Store reference to each client and whether they are listening
         CLIENTS[client.fileno()] = client
         LISTENING[client.fileno()] = True
@@ -103,6 +95,7 @@ def fillerFunc():
     
 def startListener(client):
     global SERVER, LISTENING, CURR_CLIENTS
+    updateBoard(client)
     while LISTENING[client.fileno()]:
         receive = client.recv(BUFFER).decode('utf-8')
         arg = receive.split(' ')
