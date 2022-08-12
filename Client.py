@@ -63,6 +63,7 @@ def startListener(s):
             x = arg[1]
             y = arg[2]
             color = arg[3]
+            print(f"BOX {x} {y} {color}")
             GAME_WINDOW.fillBox(x, y, color)
             # ...code here for client to lock square at (x,y) and color it
             # ...call functions in Client_GUI.py to manipulate GUI

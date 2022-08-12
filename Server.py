@@ -1,7 +1,7 @@
 import socket
 import argparse
 import threading
-
+import time
 # Defaults
 SERVER_IP = socket.gethostname()
 SERVER = None
@@ -36,8 +36,24 @@ class Box():
     def claim(self, color):
         self.CLAIMED_BY = color
 
+    def getClaimedBy(self):
+        return self.CLAIMED_BY
+
+    def getLocked(self):
+        return self.LOCKED
+
     def print(self):
         print(str(self.LOCKED) + "\n" + str(self.CLAIMED_BY))
+
+def updateBoard(client):
+    for y in range(BOARD_HEIGHT):
+        for x in range(BOARD_WIDTH):
+            boxClaimedBy = BOARD[y][x].getClaimedBy()
+            if boxClaimedBy != None:
+                claimMsg = f"CLAIM {x} {y} {boxClaimedBy}"
+                print("BOX CLAIMED BY",boxClaimedBy)
+                client.send(claimMsg.encode('utf-8'))
+                time.sleep(0.05)
 
 def startServer(ip, port):
     global SERVER, LISTENING, CURR_CLIENTS
@@ -91,6 +107,7 @@ def chooseWinner():
     
 def startListener(client):
     global SERVER, LISTENING, CURR_CLIENTS
+    updateBoard(client)
     while LISTENING[client.fileno()]:
         receive = client.recv(BUFFER).decode('utf-8')
         arg = receive.split(' ')
